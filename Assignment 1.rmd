@@ -1,0 +1,371 @@
+---
+title: "Assignment 1"
+author: "Vinod Kumar Ahuja"
+date: "September 21, 2017"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+
+## Introduction
+
+In this assignment, the data of GISS Surface Temperature Analysis (GISTEMP) is analyzed to check whether global temperature is rising over the period of time or not. 
+
+Data for the analysis is for the period from 1880 to 2015.
+
+Detailed analysis is given below:
+
+
+## Data details:
+
+First of all, data is loaded into R so that some visualization can be performed on this Data. Since this data contains time element so data is converted into time series format for R so that visualization can be performed accordingly.
+
+Data provided was in two files.
+
+  1. The first monthly temperature of the globe from the periods 1880 to 2015.Besides monthly temperature, this data also contains quarterly data for the same period.
+
+  2. The temperature in different global zones from the north pole to south pole is a period for the same period i.e.1880 to 2015.
+  
+
+This data is analyzed in three different steps as follows.
+
+  1. In the first step, data is extracted only for all the months in from the entire data set to analyze it in time series format. 
+
+  2. In a second step, quarterly data is analyzed.
+
+  3. In the third step, global zone data distributed from north pole to south pole is analyzed.
+  
+
+Detailed Analysis of each step is given below:
+
+# Step 1 (Analysis of Monthly Data)
+
+First of all monthly data for the entire set from the year 1880 to 2014 is extracted in separate CSV files. The year 2015 is dropped as it does not contain data for all the months. This data have been loaded into R as shown in following steps:
+
+```{r}
+# Reading Raw Data1
+TData1<-scan("E:/onedrive/University of Nebraska Omaha/Courses/Data Visualization/Assignment 1/NASA GISS Assignment/NASA GISS Assignment/TData1.txt")
+```
+
+
+Loaded couple of libraries for working with data.
+```{r}
+library("TTR") # for SMA function
+library("aTSA") # for checking stationary test
+library("lattice") # for graphing
+library("ggplot2") # for graphing
+```
+
+
+Transforming raw data into time series
+
+```{r}
+TSData1 <- ts(TData1, frequency=12, start=c(1880,1))
+```
+
+
+Viewing the data and its properties.
+```{r}
+TSData1
+str(TSData1)
+summary(TSData1)
+frequency(TSData1)
+aggregate(TSData1)
+```
+
+
+Plotting Time series data
+```{r}
+plot.ts(TSData1, plot.type = c("multiple"), ylab="Temperature", main="Ploting of monthly data from 1880-2014 ")
+```
+
+
+Further in order to see better pattern and trend in this time series we smooth time series data. For smoothing the order (span) of the simple moving average, using the parameter "n", needs to be specified. Since our data is monthly so order 12 is used in it. 
+
+```{r}
+plot.ts((SMA(TSData1,n=12)), ylab="Temperature", main="Ploting of monthly data from 1880-2014 after smoothing")
+```
+
+Smoothing factor can also be checked by using Holt winter function which plots data on observed vs fitted data. As shown below:
+```{r}
+plot(HoltWinters(TSData1, beta = FALSE, gamma = FALSE))
+```
+
+Further to check the seasonality effect the data is decomposed as shown below:
+
+```{r}
+DTSData1<-decompose(TSData1)
+plot(DTSData1)
+```
+
+
+After decomposing we see that there is a seasonality and an upward trend in all the observed, trend, and other two simple and smooth graphs. This clearly depicts that over the period of time global temperature is increasing.
+
+This seasonality and upward trend also depicts that data is non stationary. To correct for stationary we take first difference of data. 
+
+```{r}
+plot(diff(TSData1),ylab="Temperature", main="First Differencing of TIme Series Data")
+```
+
+
+A further box plot is drawn for entire data check of any outliers and skewness in this data.
+
+```{r}
+boxplot(TSData1, ylab="Temperature", main="Box Plot of entire data from 1880-2014")
+```
+
+Also, a box plot of each month for entire time series is also drawn to compare various month data.
+
+```{r}
+boxplot(TSData1~cycle(TSData1), xlab=" Month", ylab="Temperature", main="Box Plot of each month of entire data from 1880-2014")
+```
+
+From all above analysis it is observed that there is an upward trend in the global temperature. Further if we want to predict what will be the temperature in coming 10 years based on our past data, it can be dome in many ways. Holt winter function is used here for making short term prediction. As shown below:
+
+```{r}
+library("forecast")
+# Creating Holwinter object
+TSData1.hw<- HoltWinters(TSData1)
+# predicting 10 years ahead from this Data
+TSData1.predict<-predict(TSData1.hw, n.ahead = 10*12)
+# continuing past data and prediucted data
+ts.plot(TSData1, TSData1.predict, lty=1:2, ylab="Temperateure",main="10 year prediction based on past Data")
+# ploting only predicted data
+ts.plot(TSData1.predict, ylab="Temperateure",main="10 year prediction based on past Data")
+
+```
+
+Based on our prediction model we can also say that there is a constant rise in global temperature and if corrective measures are not taken then it is going to affect entire world.
+
+
+# Step 2 (Analysis of Quarterly Data)
+
+For analysis of quarterly data we simply imported raw data provided in CSV format. As shwon below:
+
+
+```{r}
+# Read File
+RData1 <- read.csv(file = "E:/onedrive/University of Nebraska Omaha/Courses/Data Visualization/Assignment 1/NASA GISS Assignment/NASA GISS Assignment/NASA-GISTEMP-DataCSV.csv", stringsAsFactors = FALSE)
+```
+
+
+In order to check whether imported data is in the proper format or not str function is used to check the details:
+
+```{r}
+str(RData1)
+```
+
+It is observed that some of the variables are in int format and some are in character format. For this data analysis, all the variables need to be converted into a numeric format. As shown below:
+
+```{r}
+RData1$Jan<-as.numeric(RData1$Jan)
+RData1$Feb<-as.numeric(RData1$Feb)
+RData1$Mar<-as.numeric(RData1$Mar)
+RData1$Apr<-as.numeric(RData1$Apr)
+RData1$May<-as.numeric(RData1$May)
+RData1$Jun<-as.numeric(RData1$Jun)
+RData1$Jul<-as.numeric(RData1$Jul)
+RData1$Aug<-as.numeric(RData1$Aug)
+RData1$Sep<-as.numeric(RData1$Sep)
+RData1$Oct<-as.numeric(RData1$Oct)
+RData1$Nov<-as.numeric(RData1$Nov)
+RData1$Dec<-as.numeric(RData1$Dec)
+RData1$J.D<-as.numeric(RData1$J.D)
+RData1$D.N<-as.numeric(RData1$D.N)
+RData1$DJF<-as.numeric(RData1$DJF)
+RData1$MAM<-as.numeric(RData1$MAM)
+RData1$JJA<-as.numeric(RData1$JJA)
+RData1$SON<-as.numeric(RData1$SON)
+```
+
+
+Now viewing the data and its properties.
+```{r}
+str(RData1)
+summary(RData1)
+head(RData1)
+tail(RData1)
+sum(is.na(RData1))
+```
+
+Since year 1880 and 2015 have some missing values so these two years are droped from the dataset.
+
+```{r}
+RData1<-RData1[-c(1,136),]
+```
+
+
+Ploting temperature from Jan to Dec
+```{r}
+ggplot(RData1, aes(Year, J.D))+
+  geom_point()+
+  ggtitle("Plotting Jan to Dec Temp from 1881 to 2014")+
+  labs(y="Temperature")
+  
+```
+
+
+Ploting the same Jan to Dec Temp with smooth line.
+```{r}
+ggplot(RData1, aes(Year, J.D))+
+  geom_point()+
+  geom_smooth()+
+  ggtitle("Plotting Jan to Dec Temp from 1881 to 2014 with smoothing line")+
+  labs(y="Temperature")
+```
+
+
+Plotting Quaterly Data
+
+```{r}
+ggplot(RData1, aes(Year))+
+  geom_line(aes(y=DJF, colour="DJF"))+
+  geom_line(aes(y=MAM, colour="MAM"))+
+  geom_line(aes(y=JJA, colour="JJA"))+
+  geom_line(aes(y=SON, colour="SON"))+
+  ggtitle("Plotting Yearly and Quarterly Data from 1881 to 2014")+
+  labs(y="Temperature")
+```
+
+Plotting Yearly and Quarterly Data with smoothing line
+
+```{r}
+ggplot(RData1, aes(Year, J.D))+
+  geom_line(aes(y=MAM, colour="DJF"))+
+  geom_line(aes(y=MAM, colour="MAM"))+
+  geom_line(aes(y=JJA, colour="JJA"))+
+  geom_line(aes(y=SON, colour="SON"))+
+  geom_smooth()+
+  ggtitle("Plotting Yearly and Quarterly Data from 1881 to 2014 with smoothing line")+
+  labs(y="Temperature")
+```
+
+Plotting Monthly Data
+
+```{r}
+ggplot(RData1, aes(Year))+
+  geom_line(aes(y=Jan, colour="Jan"))+
+  geom_line(aes(y=Feb, colour="Feb"))+
+  geom_line(aes(y=Mar, colour="Mar"))+
+  geom_line(aes(y=Apr, colour="Apr"))+
+  geom_line(aes(y=May, colour="May"))+
+  geom_line(aes(y=Jun, colour="Jun"))+
+  geom_line(aes(y=Jul, colour="Jul"))+
+  geom_line(aes(y=Aug, colour="Aug"))+
+  geom_line(aes(y=Sep, colour="Sep"))+
+  geom_line(aes(y=Oct, colour="Oct"))+
+  geom_line(aes(y=Nov, colour="Nov"))+
+  geom_line(aes(y=Dec, colour="Dec"))+
+  ggtitle("Plotting Monthly Data from 1881 to 2014 with smoothing line")+
+  labs(y="Temperature")
+
+```
+
+Plotting Monthly Data with smoothing line
+
+```{r}
+ggplot(RData1, aes(Year, J.D))+
+  geom_line(aes(y=Jan, colour="Jan"))+
+  geom_line(aes(y=Feb, colour="Feb"))+
+  geom_line(aes(y=Mar, colour="Mar"))+
+  geom_line(aes(y=Apr, colour="Apr"))+
+  geom_line(aes(y=May, colour="May"))+
+  geom_line(aes(y=Jun, colour="Jun"))+
+  geom_line(aes(y=Jul, colour="Jul"))+
+  geom_line(aes(y=Aug, colour="Aug"))+
+  geom_line(aes(y=Sep, colour="Sep"))+
+  geom_line(aes(y=Oct, colour="Oct"))+
+  geom_line(aes(y=Nov, colour="Nov"))+
+  geom_line(aes(y=Dec, colour="Dec"))+
+  geom_smooth()+
+  ggtitle("Plotting Monthly Data from 1881 to 2014 with smoothing line")+
+  labs(y="Temperature")
+```
+
+
+From All of the above graphs, it is observed that there is an upward trend in yearly, quarterly and monthly data. Hence step 2 also supports that there is an upward trend in global temperature.
+
+# Step 3 (Analysis of Hemispheres Data)
+
+In this step temperature data of different global horizons from north pole to south pole is used to analyze and check the upward trend in global temperature.
+
+```{r}
+# Read File
+RData2 <- read.csv(file = "E:/onedrive/University of Nebraska Omaha/Courses/Data Visualization/Assignment 1/NASA GISS Assignment/NASA GISS Assignment/NASA-GISTEMP-Data2CSV.csv", stringsAsFactors = FALSE)
+```
+
+In order to check whether imported data is in the proper format or not str function is used to check the details:
+
+```{r}
+str(RData2)
+```
+
+Since all the imported data is in the proper format so no need to make any changes to the data structure. 
+
+Further to check if there are any missing in the data or not we used:
+
+
+```{r}
+sum(is.na(RData2))
+```
+
+Further, there are no missing values in data and this data is from 1880 to 2014 so entire data is used in the evaluation.
+
+Data Summary
+```{r}
+summary(RData2)
+```
+
+
+Ploting of global temperature
+
+```{r}
+ggplot(RData2, aes(Year))+
+  geom_line(aes(y=Glob))+
+  ggtitle("Plotting Global Temperature Data from 1881 to 2014")+
+  labs(y="Temperature")
+```
+
+Plotting global temperature with smooth line.
+```{r}
+ggplot(RData2, aes(Year, Glob))+
+  geom_line()+
+  geom_smooth()+
+  ggtitle("Plotting Global Temperature from 1881 to 2014 with smoothing line")+
+  labs(y="Temperature")
+```
+
+Plotting northern and southern hemisphere temperature.
+
+```{r}
+ggplot(RData2, aes(Year))+
+  geom_line(aes(y=NHem, colour="NHem"))+
+  geom_line(aes(y=SHem, colour="SHem"))+
+  ggtitle("Plotting Northern and Southern Hemisphere temperature from 1881 to 2014")+
+  labs(y="Temperature")
+```
+
+Ploting data in various global zones from 90N to 90S.
+
+```{r}
+ggplot(RData2, aes(Year))+
+  geom_line(aes(y=X64N.90N, colour="X64N.90N"))+
+  geom_line(aes(y=X44N.64N, colour="X44N.64N"))+
+  geom_line(aes(y=X24N.44N, colour="X24N.44N"))+
+  geom_line(aes(y=X24S.24N, colour="X24S.24N"))+
+  geom_line(aes(y=X44S.24S, colour="X44S.24S"))+
+  geom_line(aes(y=X64S.44S, colour="X64S.44S"))+
+  geom_line(aes(y=X90S.64S, colour="X90S.64S"))+
+  ggtitle("Ploting data in various global zones from 90N to 90S")+
+  labs(y="Temperature")
+```
+
+Even in step 3, it is observed that all the temperature in various global zones has an increasing trend.
+
+
+# Conclusion
+
+From both the different data sets and in all three-step analysis it is observed that over the period of time global temperature is increasing every year.  That is why the entire world is concerned about global warming and is taking corrective measures to prevent it.
+
